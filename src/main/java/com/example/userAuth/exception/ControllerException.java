@@ -4,6 +4,10 @@ import org.springframework.stereotype.Component;
 
 @Component
 public class ControllerException extends RuntimeException{
+    @Override
+    public synchronized Throwable fillInStackTrace() {
+        return this;
+    }
     private String errorCode;
     private String errorMessage;
     private static final long serialVersionUID = 1L;

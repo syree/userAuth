@@ -25,7 +25,15 @@ public class User {
     private String password;
     @Column(nullable = false,unique = true)
     private String email;
+    @Column()
+    private Boolean isLoggedIn;
+    public Boolean getLoggedIn() {
+        return isLoggedIn;
+    }
 
+    public void setLoggedIn(Boolean loggedIn) {
+        isLoggedIn = loggedIn;
+    }
     public Long getId() {
         return id;
     }

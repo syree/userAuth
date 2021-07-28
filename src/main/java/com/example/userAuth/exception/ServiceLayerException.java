@@ -4,6 +4,10 @@ import org.springframework.stereotype.Component;
 
 @Component
 public class ServiceLayerException extends RuntimeException{
+    @Override
+    public synchronized Throwable fillInStackTrace() {
+        return this;
+    }
     private static final long serialVersionUID = 1L;
     private String errorCode;
     private String errorMessage;
