@@ -2,11 +2,10 @@ package com.example.userAuth.user;
 
 import com.example.userAuth.exception.ServiceLayerException;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.ResponseEntity;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import javax.transaction.Transactional;
-import java.rmi.server.ServerCloneException;
 import java.util.List;
 import java.util.Optional;
 import java.util.regex.Matcher;
@@ -17,6 +16,10 @@ public class UserService {
 
     @Autowired
     private UserRepository userRepository;
+
+
+    @Autowired
+    private BCryptPasswordEncoder bCryptPasswordEncoder;
 
     public static boolean isValid(String email) {
         String emailRegex = "^[a-zA-Z0-9_+&*-]+(?:\\." +
@@ -67,6 +70,8 @@ public class UserService {
         if (userByEmail.isPresent())
             throw new ServiceLayerException("604", "Email is taken");
         try {
+            String encodedPassword = bCryptPasswordEncoder.encode(user.getPassword());
+            user.setPassword(encodedPassword);
             user.setLoggedIn(false);
             return userRepository.save(user);
         } catch (IllegalArgumentException e) {
@@ -111,14 +116,14 @@ public class UserService {
         if (!isValidPassword(password)) {
             throw new ServiceLayerException("603", "Please provide valid password ");
         }
-        if (password.equals(user.getPassword())) {
+        if (bCryptPasswordEncoder.matches(password,user.getPassword())) {
             throw new ServiceLayerException("610", "Password matches,please enter another password");
         }
         if (!user.getLoggedIn()) {
             throw new ServiceLayerException("612", "User not logged in.");
         }
         try {
-            userbyId.get().setPassword(password);
+            userbyId.get().setPassword(bCryptPasswordEncoder.encode(password));
             return user;
         } catch (Exception e) {
             throw new ServiceLayerException("610", "Something went wrong while deleting user in the service layer");
@@ -132,7 +137,7 @@ public class UserService {
             throw new ServiceLayerException("611", "Email does not exist");
         if (!isValidPassword(password))
             throw new ServiceLayerException("603", "Please provide a valid password ");
-        if (!password.equals(userByEmail.get().getPassword())) {
+        if (!bCryptPasswordEncoder.matches(password,userByEmail.get().getPassword())) {
             throw new ServiceLayerException("611", "Password does not match");
         }
         try {
@@ -145,11 +150,9 @@ public class UserService {
     @Transactional
     public void logoutUserWithId(Long userId) {
         boolean b = userRepository.existsById(userId);
-//        System.out.println(b);
         if (!b) {
             throw new ServiceLayerException("609", "No user exists with Id " + userId + ".");
         }
-//        System.out.println("Here");
         Optional<User> userById = userRepository.findById(userId);
         if (!userById.get().getLoggedIn()) {
             throw new ServiceLayerException("612", "User not logged in.");

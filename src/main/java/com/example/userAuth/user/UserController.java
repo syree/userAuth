@@ -62,7 +62,7 @@ public class UserController {
             ApiResponse<Void> apiResponse = new ApiResponse<>();
             apiResponse.setMessage("User with Id "+userId+" deleted successfully");
             userService.deleteUser(userId);
-            return new ResponseEntity<ApiResponse<?>>(HttpStatus.OK);
+            return new ResponseEntity<ApiResponse<?>>(apiResponse,HttpStatus.OK);
         }catch (ServiceLayerException e){
             ApiResponse<ControllerException> apiResponse = new ApiResponse<>();
             apiResponse.setMessage(e.getErrorMessage());
