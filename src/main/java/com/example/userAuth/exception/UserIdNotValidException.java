@@ -3,16 +3,13 @@ package com.example.userAuth.exception;
 import org.springframework.stereotype.Component;
 
 @Component
-public class ServiceLayerException extends Exception{
-
+public class UserIdNotValidException extends Exception{
     private String errorMessage;
-
-    public ServiceLayerException(String errorMessage) {
+    public UserIdNotValidException(String errorMessage) {
         super();
         this.errorMessage = errorMessage;
     }
-
-    public ServiceLayerException() {
+    public UserIdNotValidException(){
     }
     public String getErrorMessage() {
         return errorMessage;

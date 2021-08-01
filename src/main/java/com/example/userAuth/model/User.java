@@ -1,11 +1,15 @@
-package com.example.userAuth.user;
+package com.example.userAuth.model;
 
-import javax.annotation.processing.Generated;
 import javax.persistence.*;
+import javax.validation.constraints.*;
 
 @Entity
 @Table
 public class User {
+    public User() {
+
+    }
+
     @Id
     @SequenceGenerator(
             name = "user_sequence",
@@ -18,12 +22,20 @@ public class User {
     )
     private Long id;
     @Column(nullable = false)
+    @NotEmpty(message = "First name should not be empty.")
+    @Size(min = 2,message = "Minimum length of first name should be 2")
     private String firstName;
     @Column(nullable = false)
+    @NotEmpty(message = "Last name should not be empty.")
+    @Size(min = 2,message = "Minimum length of last name should be 2")
     private String lastName;
+    @NotEmpty(message = "Password should not be empty.")
+    @Size(min = 2,message = "Minimum length of password should be 2")
     @Column(nullable = false)
     private String password;
     @Column(nullable = false,unique = true)
+    @NotEmpty(message = "Email should not be empty.")
+    @Email(message = "Enter a valid email address")
     private String email;
     @Column()
     private Boolean isLoggedIn;
