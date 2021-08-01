@@ -1,149 +1,140 @@
 package com.example.userAuth.user;
 
+import com.example.userAuth.message.ErrorResponseMessage;
 import com.example.userAuth.exception.ServiceLayerException;
+import com.example.userAuth.validators.EmailValidator;
+import com.example.userAuth.validators.NameValidator;
+import com.example.userAuth.validators.PasswordValidator;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.util.CollectionUtils;
 
 import javax.transaction.Transactional;
 import java.util.List;
 import java.util.Optional;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
+@Slf4j
 @Service
 public class UserService {
 
     @Autowired
     private UserRepository userRepository;
 
-
     @Autowired
     private BCryptPasswordEncoder bCryptPasswordEncoder;
 
-    public static boolean isValid(String email) {
-        String emailRegex = "^[a-zA-Z0-9_+&*-]+(?:\\." +
-                "[a-zA-Z0-9_+&*-]+)*@" +
-                "(?:[a-zA-Z0-9-]+\\.)+[a-z" +
-                "A-Z]{2,7}$";
+    @Autowired
+    private EmailValidator emailValidator;
 
-        Pattern pat = Pattern.compile(emailRegex);
-        if (email == null)
-            return false;
-        return pat.matcher(email).matches();
-    }
+    @Autowired
+    private NameValidator nameValidator;
 
-    public static boolean isValidfirstName(String firstName) {
-        return firstName.matches("[A-Z][a-z]*");
-    }
-
-    // validate last name
-    public static boolean isValidlastName(String lastName) {
-        return lastName.matches("[A-Z][a-z]*");
-    }
-
-    public static boolean isValidPassword(String password) {
-
-        String regex = "^(?=.*[0-9])"
-                + "(?=.*[a-z])(?=.*[A-Z])"
-                + "(?=.*[@#$%^&+=])"
-                + "(?=\\S+$).{8,20}$";
-        Pattern p = Pattern.compile(regex);
-        if (password == null) {
-            return false;
-        }
-        Matcher m = p.matcher(password);
-        return m.matches();
-    }
+    @Autowired
+    private PasswordValidator passwordValidator;
 
     User addNewUser(User user) {
-        if (!isValidfirstName(user.getFirstName()) || !isValidlastName(user.getLastName())) {
-            throw new ServiceLayerException("601", "Please enter valid name");
+        log.info("Adding user....");
+        if(user == null)
+            throw new NullPointerException(ErrorResponseMessage.passwordMatches);
+        if (!nameValidator.isValidName(user.getFirstName())) {
+            log.error(ErrorResponseMessage.notValidFirstName);
+            throw new ServiceLayerException(ErrorResponseMessage.notValidFirstName);
         }
-        if (!isValid(user.getEmail())) {
-            throw new ServiceLayerException("602", "Please enter valid email");
+        if (!nameValidator.isValidName(user.getLastName())) {
+            log.error(ErrorResponseMessage.notValidLastName);
+            throw new ServiceLayerException(ErrorResponseMessage.notValidLastName);
         }
-        if (!isValidPassword(user.getPassword())) {
-            throw new ServiceLayerException("603", "Please enter valid password");
+        if (!emailValidator.isValid(user.getEmail())) {
+            log.error(ErrorResponseMessage.notValidEmail);
+            throw new ServiceLayerException(ErrorResponseMessage.notValidEmail);
+        }
+        if (!passwordValidator.isValidPassword(user.getPassword())) {
+            log.error(ErrorResponseMessage.notValidPassword);
+            throw new ServiceLayerException(ErrorResponseMessage.notValidPassword);
         }
         Optional<User> userByEmail = userRepository.findUserByEmail(user.getEmail());
-        if (userByEmail.isPresent())
-            throw new ServiceLayerException("604", "Email is taken");
+        if (userByEmail.isPresent()) {
+            log.warn(ErrorResponseMessage.emailIsTaken);
+            throw new ServiceLayerException(ErrorResponseMessage.emailIsTaken);
+        }
         try {
             String encodedPassword = bCryptPasswordEncoder.encode(user.getPassword());
             user.setPassword(encodedPassword);
             user.setLoggedIn(false);
+            log.info("User added");
             return userRepository.save(user);
         } catch (IllegalArgumentException e) {
-            throw new ServiceLayerException("605", "Enter valid input " + e.getMessage());
+            throw new ServiceLayerException(ErrorResponseMessage.notValidInput + e.getMessage());
         } catch (Exception e) {
-            throw new ServiceLayerException("606", "Something went wrong in the service layer " + e.getMessage());
+            throw new ServiceLayerException(ErrorResponseMessage.serviceLayerErrorAdding);
         }
     }
 
     public List<User> getAllUsers() {
         List<User> users = userRepository.findAll();
-        if (users.isEmpty()) {
-            throw new ServiceLayerException("607", "No users currently.");
+        if (CollectionUtils.isEmpty(users)) {
+            throw new ServiceLayerException(ErrorResponseMessage.noUsers);
         }
         try {
             return users;
         } catch (Exception e) {
-            throw new ServiceLayerException("608", "Something went wrong in the service layer while fetching.");
+            throw new ServiceLayerException(ErrorResponseMessage.serviceLayerErrorFetching);
         }
     }
 
     public void deleteUser(Long userId) {
         boolean b = userRepository.existsById(userId);
         if (!b) {
-            throw new ServiceLayerException("609", "No user exists with Id " + userId + ".");
+            throw new ServiceLayerException(ErrorResponseMessage.noUserExistsWithId + userId + ".");
         }
         try {
             userRepository.deleteById(userId);
         } catch (Exception e) {
-            throw new ServiceLayerException("610", "Something went wrong while deleting user in the service layer");
+            throw new ServiceLayerException(ErrorResponseMessage.serviceLayerErrorDeleting);
         }
     }
-
     @Transactional
     public User updateUserByPassword(Long userId, String password) {
         boolean b = userRepository.existsById(userId);
         if (!b) {
-            throw new ServiceLayerException("609", "No user exists with Id " + userId + ".");
+            throw new ServiceLayerException(ErrorResponseMessage.noUserExistsWithId + userId + ".");
         }
         Optional<User> userbyId = userRepository.findById(userId);
         User user = userbyId.get();
-        if (!isValidPassword(password)) {
-            throw new ServiceLayerException("603", "Please provide valid password ");
+        if (!passwordValidator.isValidPassword(password)) {
+            throw new ServiceLayerException(ErrorResponseMessage.notValidPassword);
         }
-        if (bCryptPasswordEncoder.matches(password,user.getPassword())) {
-            throw new ServiceLayerException("610", "Password matches,please enter another password");
+        if (bCryptPasswordEncoder.matches(password, user.getPassword())) {
+            throw new ServiceLayerException(ErrorResponseMessage.passwordMatches);
         }
         if (!user.getLoggedIn()) {
-            throw new ServiceLayerException("612", "User not logged in.");
+            throw new ServiceLayerException(ErrorResponseMessage.userNotLoggedIn);
         }
         try {
             userbyId.get().setPassword(bCryptPasswordEncoder.encode(password));
             return user;
         } catch (Exception e) {
-            throw new ServiceLayerException("610", "Something went wrong while deleting user in the service layer");
+            throw new ServiceLayerException(ErrorResponseMessage.serviceLayerErrorUpdating);
         }
     }
 
     @Transactional
-    public void loginUserWithEmailAndPassword(String email, String password) {
+    public User loginUserWithEmailAndPassword(String email, String password) {
         Optional<User> userByEmail = userRepository.findUserByEmail(email);
         if (!userByEmail.isPresent())
-            throw new ServiceLayerException("611", "Email does not exist");
-        if (!isValidPassword(password))
-            throw new ServiceLayerException("603", "Please provide a valid password ");
-        if (!bCryptPasswordEncoder.matches(password,userByEmail.get().getPassword())) {
-            throw new ServiceLayerException("611", "Password does not match");
+            throw new ServiceLayerException(ErrorResponseMessage.emailDoestNotExists);
+        if (!passwordValidator.isValidPassword(password))
+            throw new ServiceLayerException(ErrorResponseMessage.notValidPassword);
+        if (!bCryptPasswordEncoder.matches(password, userByEmail.get().getPassword())) {
+            throw new ServiceLayerException(ErrorResponseMessage.passwordNotMatches);
         }
         try {
             userByEmail.get().setLoggedIn(true);
+            return userByEmail.get();
         } catch (Exception e) {
-            throw new ServiceLayerException("610", "Something went wrong while deleting user in the service layer");
+            throw new ServiceLayerException(ErrorResponseMessage.serviceLayerErrorLoggingIn);
         }
     }
 
@@ -151,16 +142,16 @@ public class UserService {
     public void logoutUserWithId(Long userId) {
         boolean b = userRepository.existsById(userId);
         if (!b) {
-            throw new ServiceLayerException("609", "No user exists with Id " + userId + ".");
+            throw new ServiceLayerException(ErrorResponseMessage.noUserExistsWithId + userId + ".");
         }
         Optional<User> userById = userRepository.findById(userId);
         if (!userById.get().getLoggedIn()) {
-            throw new ServiceLayerException("612", "User not logged in.");
+            throw new ServiceLayerException(ErrorResponseMessage.userNotLoggedIn);
         }
         try {
             userById.get().setLoggedIn(false);
         } catch (Exception e) {
-            throw new ServiceLayerException("610", "Something went wrong while deleting user in the service layer");
+            throw new ServiceLayerException(ErrorResponseMessage.serviceLayerErrorLoggingOut);
         }
     }
 
