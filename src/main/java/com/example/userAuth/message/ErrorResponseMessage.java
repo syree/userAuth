@@ -12,6 +12,7 @@ public class ErrorResponseMessage {
     public static final String notValidEmail = "Please enter a valid email.";
     public static final String notValidPassword = "Please enter a valid password.";
     public static final String emailIsTaken = "Email is taken.";
+    public static final String oldPasswordWrong = "Old password is wrong.";
     public static final String notValidInput = "Enter a valid input.";
     public static final String serviceLayerErrorAdding = "Something went wrong in the service layer while adding the user.";
     public static final String noUsers = "No users currently.";
@@ -29,8 +30,5 @@ public class ErrorResponseMessage {
     public static final String controllerLayerErrorDeleting = "Something went wrong while deleting the user in the controller layer.";
     public static final String controllerLayerErrorFetching = "Something went wrong in the controller layer while fetching the users.";
     public static final String controllerLayerErrorAdding = "Something went wrong in the controller layer while adding the user.";
-
-
-
 
 }

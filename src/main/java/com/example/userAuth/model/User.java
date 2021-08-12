@@ -1,5 +1,7 @@
 package com.example.userAuth.model;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 import javax.persistence.*;
 import javax.validation.constraints.*;
 
@@ -9,7 +11,6 @@ public class User {
     public User() {
 
     }
-
     @Id
     @SequenceGenerator(
             name = "user_sequence",
@@ -84,5 +85,17 @@ public class User {
 
     public void setEmail(String email) {
         this.email = email;
+    }
+
+    @Override
+    public String toString() {
+        return "User{" +
+                "id=" + id +
+                ", firstName='" + firstName + '\'' +
+                ", lastName='" + lastName + '\'' +
+                ", password='" + password + '\'' +
+                ", email='" + email + '\'' +
+                ", isLoggedIn=" + isLoggedIn +
+                '}';
     }
 }

@@ -3,10 +3,8 @@ package com.example.userAuth.exception;
 import org.springframework.stereotype.Component;
 
 @Component
-public class ServiceLayerException extends Exception{
-
+public class ServiceLayerException extends RuntimeException{
     private String errorMessage;
-
     public ServiceLayerException(String errorMessage) {
         super();
         this.errorMessage = errorMessage;
