@@ -30,5 +30,4 @@ public class ErrorResponseMessage {
     public static final String controllerLayerErrorDeleting = "Something went wrong while deleting the user in the controller layer.";
     public static final String controllerLayerErrorFetching = "Something went wrong in the controller layer while fetching the users.";
     public static final String controllerLayerErrorAdding = "Something went wrong in the controller layer while adding the user.";
-
 }
